@@ -4,8 +4,10 @@
 //! 返回 127.0.0.x 表示已被列入。
 
 use super::{BlacklistEntry, BlacklistInfo, CheckStatus, RiskLevel};
+use hickory_resolver::config::ResolverConfig;
 use hickory_resolver::TokioAsyncResolver;
 use std::net::IpAddr;
+use std::time::Duration;
 
 const DNSBL_LISTS: &[&str] = &[
     "zen.spamhaus.org",
@@ -40,21 +42,11 @@ async fn is_listed(resolver: &TokioAsyncResolver, query: &str) -> bool {
 
 pub async fn detect(public_ip: &str) -> BlacklistInfo {
     let ip: Option<IpAddr> = public_ip.parse().ok();
-    let resolver = match TokioAsyncResolver::tokio_from_system_conf() {
-        Ok(r) => r,
-        Err(_) => {
-            return BlacklistInfo {
-                lists: Vec::new(),
-                reputation_score: 0,
-                hit_count: 0,
-                status: CheckStatus {
-                    level: RiskLevel::Warn,
-                    summary: "无法初始化 DNS 解析器，黑名单检测被跳过。".to_string(),
-                    error: Some("resolver init failed".to_string()),
-                },
-            };
-        }
-    };
+    // 使用 Google 公共 DNS 并设置短超时，避免系统 DNS 慢导致卡住
+    let mut opts = hickory_resolver::config::ResolverOpts::default();
+    opts.timeout = Duration::from_secs(2);
+    opts.attempts = 1;
+    let resolver = TokioAsyncResolver::tokio(ResolverConfig::google(), opts);
 
     let rev = match ip.and_then(|i| reverse_ip(&i)) {
         Some(r) => r,

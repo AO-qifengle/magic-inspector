@@ -5,8 +5,10 @@
 
 use super::ip::{classify_ip_type, fetch_raw_signals};
 use super::{CheckStatus, NetworkInfo, ProxyInfo, RiskLevel};
+use hickory_resolver::config::{ResolverConfig, ResolverOpts};
 use hickory_resolver::TokioAsyncResolver;
 use std::net::IpAddr;
+use std::time::Duration;
 
 const VPN_KEYWORDS: &[&str] = &[
     "vpn", "nordvpn", "expressvpn", "private internet access", "mullvad",
@@ -35,10 +37,11 @@ async fn is_tor_exit(ip: &IpAddr) -> bool {
         }
         IpAddr::V6(_) => return false,
     };
-    let resolver = match TokioAsyncResolver::tokio_from_system_conf() {
-        Ok(r) => r,
-        Err(_) => return false,
-    };
+    // 使用 Google 公共 DNS + 短超时，避免系统 DNS 慢导致卡住
+    let mut opts = ResolverOpts::default();
+    opts.timeout = Duration::from_secs(2);
+    opts.attempts = 1;
+    let resolver = TokioAsyncResolver::tokio(ResolverConfig::google(), opts);
     let query = format!("{}.torexit.dan.me.uk", rev);
     resolver
         .ipv4_lookup(&query)

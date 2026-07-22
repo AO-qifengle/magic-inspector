@@ -7,6 +7,7 @@ use hickory_resolver::config::NameServerConfig;
 use hickory_resolver::system_conf;
 use serde::Deserialize;
 use std::net::IpAddr;
+use std::time::Duration;
 
 #[derive(Deserialize)]
 struct IpWhoIs {
@@ -79,7 +80,11 @@ pub async fn detect(network: &NetworkInfo) -> DnsInfo {
             });
             continue;
         }
-        let geo = geolocate(&addr_str).await;
+        // 每个 DNS 服务器的地理定位最多等 3 秒，避免串行卡住
+        let geo = tokio::time::timeout(Duration::from_secs(3), geolocate(&addr_str))
+            .await
+            .ok()
+            .flatten();
         match geo {
             Some((country, isp)) => servers.push(DnsServer {
                 address: addr_str,

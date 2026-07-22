@@ -60,13 +60,93 @@ fn read_macos_proxy() -> Option<(&'static str, String, u16)> {
     None
 }
 
-/// 读取 Windows 系统代理设置（通过注册表）。
+/// 读取 Windows 系统代理设置（通过注册表 `reg query`）。
 #[cfg(target_os = "windows")]
 fn read_windows_proxy() -> Option<(&'static str, String, u16)> {
-    // Windows 上 reqwest 默认会读取环境变量。
-    // 系统代理通常存在注册表 HKCU\...\Internet Settings，
-    // 大多数 VPN 客户端也会设置环境变量，所以这里仅做环境变量兜底。
+    // 先查环境变量（Clash / V2Ray 等客户端常设置）
+    for (var, ptype) in [
+        ("HTTPS_PROXY", "https"),
+        ("https_proxy", "https"),
+        ("HTTP_PROXY", "http"),
+        ("http_proxy", "http"),
+        ("ALL_PROXY", "all"),
+        ("all_proxy", "all"),
+    ] {
+        if let Ok(val) = std::env::var(var) {
+            if let Some((h, p)) = parse_proxy_url(&val) {
+                return Some((ptype, h, p));
+            }
+        }
+    }
+
+    // 再查注册表 HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings
+    let output = Command::new("reg")
+        .args([
+            "query",
+            r"HKCU\Software\Microsoft\Windows\CurrentVersion\Internet Settings",
+            "/v",
+            "ProxyServer",
+        ])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // ProxyServer 格式: "host:port" 或 "http=host:port;https=host:port;socks=host:port"
+    for line in stdout.lines() {
+        let line = line.trim();
+        if let Some(val) = line.split("REG_SZ").nth(1) {
+            let val = val.trim();
+            // 多协议格式: "http=127.0.0.1:7890;https=127.0.0.1:7890;socks=127.0.0.1:7891"
+            for part in val.split(';') {
+                let part = part.trim();
+                if let Some((proto, addr)) = part.split_once('=') {
+                    if let Some((h, p)) = parse_host_port(addr) {
+                        let ptype = match proto.to_lowercase().as_str() {
+                            "https" => "https",
+                            "socks" => "socks",
+                            _ => "http",
+                        };
+                        return Some((ptype, h.to_string(), p));
+                    }
+                }
+            }
+            // 单一格式: "127.0.0.1:7890"
+            if let Some((h, p)) = parse_host_port(val) {
+                return Some(("http", h.to_string(), p));
+            }
+        }
+    }
     None
+}
+
+/// 从 "http://host:port" 或 "host:port" 格式解析出 (host, port)。
+#[cfg(target_os = "windows")]
+fn parse_proxy_url(url: &str) -> Option<(String, u16)> {
+    let url = url.trim();
+    let addr = if let Some(rest) = url.strip_prefix("http://")
+        .or_else(|| url.strip_prefix("https://"))
+        .or_else(|| url.strip_prefix("socks5://"))
+        .or_else(|| url.strip_prefix("socks5h://"))
+    {
+        rest
+    } else {
+        url
+    };
+    parse_host_port(addr).map(|(h, p)| (h.to_string(), p))
+}
+
+#[cfg(target_os = "windows")]
+fn parse_host_port(addr: &str) -> Option<(String, u16)> {
+    let addr = addr.trim();
+    let (h, p) = addr.rsplit_once(':')?;
+    let h = h.trim().to_string();
+    let p: u16 = p.trim().parse().ok()?;
+    if h.is_empty() || p == 0 {
+        return None;
+    }
+    Some((h, p))
 }
 
 /// 获取系统代理，返回 reqwest::Proxy 配置用的字符串（如 "http://127.0.0.1:7890"）。
