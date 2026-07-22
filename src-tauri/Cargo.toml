@@ -1,0 +1,26 @@
+[package]
+name = "magic-inspector"
+version = "1.0.0"
+description = "魔法检测工具 - 一键检测当前网络环境是否安全"
+authors = ["Magic Inspector"]
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "magic_inspector_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls", "socks"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "time"] }
+hickory-resolver = "0.24"
+
+[features]
+custom-protocol = ["tauri/custom-protocol"]

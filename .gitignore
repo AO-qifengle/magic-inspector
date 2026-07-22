@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/schemas/
+src-tauri/gen/apple/
+src-tauri/gen/android/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+
+# Env
+.env
+.env.local
+tsconfig.app.tsbuildinfo
+tsconfig.node.tsbuildinfo
