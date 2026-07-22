@@ -89,10 +89,7 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
-          packages: |
-            ndk;26.3.11579264
-            platforms;android-35
-            build-tools;35.0.0
+          packages: ndk;27.2.12479018 platforms;android-35 build-tools;35.0.0
 
       - name: Install dependencies
         run: npm ci
@@ -103,7 +100,7 @@ jobs:
       - name: Build Android APK
         run: npx tauri android build --apk
         env:
-          NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/26.3.11579264
+          NDK_HOME: ${{ env.ANDROID_SDK_ROOT }}/ndk/27.2.12479018
 
       - name: Upload Android artifacts
         uses: actions/upload-artifact@v4
