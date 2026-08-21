@@ -11,17 +11,48 @@ use std::net::IpAddr;
 use std::time::Duration;
 
 const VPN_KEYWORDS: &[&str] = &[
-    "vpn", "nordvpn", "expressvpn", "private internet access", "mullvad",
-    "protonvpn", "proton ag", "cyberghost", "surfshark", "ipvanish",
-    "tunnelbear", "privatevpn", "windscribe", "astrill", "vyprvpn",
-    "purevpn", "hidemyass", "hotspot shield", "strongvpn",
+    "vpn",
+    "nordvpn",
+    "expressvpn",
+    "private internet access",
+    "mullvad",
+    "protonvpn",
+    "proton ag",
+    "cyberghost",
+    "surfshark",
+    "ipvanish",
+    "tunnelbear",
+    "privatevpn",
+    "windscribe",
+    "astrill",
+    "vyprvpn",
+    "purevpn",
+    "hidemyass",
+    "hotspot shield",
+    "strongvpn",
 ];
 
 const CLOUD_KEYWORDS: &[&str] = &[
-    "amazon", "aws", "azure", "microsoft", "google cloud", "google llc",
-    "alibaba", "tencent", "huawei cloud", "oracle", "ibm cloud",
-    "digitalocean", "vultr", "linode", "hetzner", "ovh", "scaleway",
-    "contabo", "leaseweb", "cloudflare",
+    "amazon",
+    "aws",
+    "azure",
+    "microsoft",
+    "google cloud",
+    "google llc",
+    "alibaba",
+    "tencent",
+    "huawei cloud",
+    "oracle",
+    "ibm cloud",
+    "digitalocean",
+    "vultr",
+    "linode",
+    "hetzner",
+    "ovh",
+    "scaleway",
+    "contabo",
+    "leaseweb",
+    "cloudflare",
 ];
 
 fn matches_any(blob: &str, keywords: &[&str]) -> bool {
@@ -66,8 +97,7 @@ pub async fn detect(network: &NetworkInfo) -> ProxyInfo {
     };
 
     let ip_type = classify_ip_type(&network.organization, &network.isp);
-    let is_hosting =
-        raw_hosting || is_cloud || ip_type == super::IpType::Datacenter;
+    let is_hosting = raw_hosting || is_cloud || ip_type == super::IpType::Datacenter;
     let is_mobile = raw_mobile || ip_type == super::IpType::Mobile;
     let is_residential = !is_hosting && !is_mobile && ip_type == super::IpType::Residential;
     let is_proxy = raw_proxy;
@@ -88,8 +118,7 @@ pub async fn detect(network: &NetworkInfo) -> ProxyInfo {
     } else if is_hosting {
         (
             RiskLevel::Warn,
-            "当前 IP 属于数据中心 / 云服务器，部分网站可能增加验证码或限制访问。"
-                .to_string(),
+            "当前 IP 属于数据中心 / 云服务器，部分网站可能增加验证码或限制访问。".to_string(),
         )
     } else if is_mobile {
         (
@@ -102,10 +131,7 @@ pub async fn detect(network: &NetworkInfo) -> ProxyInfo {
             "当前 IP 属于家庭宽带，伪装度较高，多数网站不会额外限制。".to_string(),
         )
     } else {
-        (
-            RiskLevel::Ok,
-            "未发现明显的代理 / VPN 特征。".to_string(),
-        )
+        (RiskLevel::Ok, "未发现明显的代理 / VPN 特征。".to_string())
     };
 
     ProxyInfo {
@@ -116,6 +142,10 @@ pub async fn detect(network: &NetworkInfo) -> ProxyInfo {
         is_residential,
         is_mobile,
         is_cloud,
-        status: CheckStatus { level, summary, error: None },
+        status: CheckStatus {
+            level,
+            summary,
+            error: None,
+        },
     }
 }

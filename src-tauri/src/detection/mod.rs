@@ -11,6 +11,7 @@ pub mod http;
 pub mod ip;
 pub mod ipv6;
 pub mod proxy;
+pub mod speed;
 pub mod streaming;
 
 /// IP 归属类型，用于判断是家宽还是数据中心。
@@ -159,6 +160,43 @@ pub struct BackendReport {
     pub proxy: ProxyInfo,
     pub ai_services: AiServicesInfo,
     pub streaming: StreamingInfo,
+}
+
+/// 网络质量测速的原始结果。数值采用毫秒、Mbps 和字节，缺失指标表示该阶段未完成。
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpeedMetrics {
+    pub status: String,
+    pub latency_ms: Option<f64>,
+    pub jitter_ms: Option<f64>,
+    pub download_mbps: Option<f64>,
+    pub upload_mbps: Option<f64>,
+    pub download_loaded_latency_ms: Option<f64>,
+    pub upload_loaded_latency_ms: Option<f64>,
+    pub bytes_downloaded: u64,
+    pub bytes_uploaded: u64,
+    pub duration_ms: u64,
+    pub error: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpeedUseCase {
+    pub id: String,
+    pub score: u8,
+    pub level: RiskLevel,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpeedAssessment {
+    pub score: u8,
+    pub level: RiskLevel,
+    pub use_cases: Vec<SpeedUseCase>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SpeedReport {
+    pub provider: String,
+    pub metrics: SpeedMetrics,
+    pub assessment: SpeedAssessment,
 }
 
 /// 单个检测阶段的进度事件载荷。

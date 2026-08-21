@@ -97,8 +97,44 @@ export interface StreamingInfo {
   services: StreamingResult[];
 }
 
+export type SpeedStatus = "pending" | "running" | "complete" | "partial" | "cancelled";
+export type SpeedUseCaseId = "browsing" | "streaming4k" | "video_call" | "gaming";
+
+export interface SpeedMetrics {
+  status: SpeedStatus;
+  latency_ms: number | null;
+  jitter_ms: number | null;
+  download_mbps: number | null;
+  upload_mbps: number | null;
+  download_loaded_latency_ms: number | null;
+  upload_loaded_latency_ms: number | null;
+  bytes_downloaded: number;
+  bytes_uploaded: number;
+  duration_ms: number;
+  error: string | null;
+}
+
+export interface SpeedUseCase {
+  id: SpeedUseCaseId;
+  score: number;
+  level: RiskLevel;
+}
+
+export interface SpeedAssessment {
+  score: number;
+  level: RiskLevel;
+  use_cases: SpeedUseCase[];
+}
+
+export interface SpeedReport {
+  provider: "cloudflare" | string;
+  metrics: SpeedMetrics;
+  assessment: SpeedAssessment;
+}
+
 /** WebRTC 检测结果（前端采集，非后端）。 */
 export interface WebRtcInfo {
+  outcome: "leak" | "clear" | "inconclusive" | "unsupported";
   leaked: boolean;
   local_addresses: string[];
   public_address: string | null;
@@ -132,6 +168,7 @@ export interface FullReport {
   proxy: ProxyInfo;
   ai_services: AiServicesInfo;
   streaming: StreamingInfo;
+  speed: SpeedReport;
   /** 综合健康度评分（0–100），由前端规则计算。 */
   score: number;
   score_level: RiskLevel;
@@ -150,7 +187,8 @@ export type StageId =
   | "blacklist"
   | "proxy"
   | "ai"
-  | "streaming";
+  | "streaming"
+  | "speed";
 
 export interface StageState {
   id: StageId;

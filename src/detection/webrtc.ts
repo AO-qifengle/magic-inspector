@@ -8,8 +8,10 @@
 export interface WebRtcRaw {
   local_addresses: string[];
   public_candidates: string[];
-  /** 浏览器是否把本地 IP 混淆为 .local（mDNS）。 */
-  mdns_obfuscated: boolean;
+  /** ICE 收集是否在超时前正常结束。 */
+  gathering_complete: boolean;
+  /** 当前 WebView 是否支持 WebRTC。 */
+  supported: boolean;
 }
 
 function isPrivateIp(ip: string): boolean {
@@ -35,6 +37,10 @@ function isPrivateIp(ip: string): boolean {
   return false;
 }
 
+function isPublicAddress(ip: string): boolean {
+  return !isPrivateIp(ip) && ip !== "0.0.0.0" && ip !== "::";
+}
+
 function extractAddress(candidate: string): { address: string; type: string } | null {
   // candidate:<foundation> <component> <proto> <priority> <addr> <port> typ <type> ...
   const parts = candidate.split(/\s+/);
@@ -47,17 +53,20 @@ function extractAddress(candidate: string): { address: string; type: string } | 
 
 export async function gatherWebRtcCandidates(timeoutMs = 3000): Promise<WebRtcRaw> {
   if (typeof window === "undefined" || typeof window.RTCPeerConnection !== "function") {
-    return { local_addresses: [], public_candidates: [], mdns_obfuscated: false };
+    return { local_addresses: [], public_candidates: [], gathering_complete: false, supported: false };
   }
 
   let pc: RTCPeerConnection | null = null;
   const local = new Set<string>();
   const pub = new Set<string>();
-  let mdns = false;
+  let gatheringComplete = false;
 
   try {
     pc = new RTCPeerConnection({
-      iceServers: [{ urls: "stun:stun.l.google.com:19302" }],
+      iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun.cloudflare.com:3478" },
+      ],
     });
     pc.createDataChannel("mi-probe");
 
@@ -65,29 +74,30 @@ export async function gatherWebRtcCandidates(timeoutMs = 3000): Promise<WebRtcRa
       if (!e.candidate || !e.candidate.candidate) return;
       const extracted = extractAddress(e.candidate.candidate);
       if (!extracted) return;
-      const { address } = extracted;
+      const { address, type } = extracted;
       if (address.endsWith(".local")) {
-        mdns = true;
         return;
       }
       if (isPrivateIp(address)) {
         local.add(address);
-      } else {
+      } else if (isPublicAddress(address) && (type === "host" || type === "srflx")) {
+        // relay 是 TURN 服务器的中继地址，不代表设备真实出口，不能用于泄露判断。
         pub.add(address);
       }
     };
 
+    const completion = new Promise<void>((resolve) => {
+      pc!.onicegatheringstatechange = () => {
+        if (pc!.iceGatheringState === "complete") {
+          gatheringComplete = true;
+          resolve();
+        }
+      };
+    });
     const offer = await pc.createOffer({});
     await pc.setLocalDescription(offer);
 
-    await new Promise<void>((resolve) => {
-      if (!pc) return resolve();
-      const check = () => {
-        if (pc!.iceGatheringState === "complete") resolve();
-      };
-      pc.onicegatheringstatechange = check;
-      setTimeout(resolve, timeoutMs);
-    });
+    await Promise.race([completion, new Promise<void>((resolve) => setTimeout(resolve, timeoutMs))]);
   } catch {
     /* 静默失败，返回空结果 */
   } finally {
@@ -103,6 +113,7 @@ export async function gatherWebRtcCandidates(timeoutMs = 3000): Promise<WebRtcRa
   return {
     local_addresses: Array.from(local),
     public_candidates: Array.from(pub),
-    mdns_obfuscated: mdns,
+    gathering_complete: gatheringComplete,
+    supported: true,
   };
 }

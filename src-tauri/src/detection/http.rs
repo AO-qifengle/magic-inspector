@@ -1,7 +1,7 @@
 //! 共享的 HTTP 客户端与轻量 JSON 抓取工具。
 //!
-//! 使用 rustls-tls，避免对系统 OpenSSL 的依赖。所有外部请求都设置较短超时，
-//! 以保证整次检测可在 5 秒内完成（并发执行时尤其重要）。
+//! 使用 rustls-tls，避免对系统 OpenSSL 的依赖。普通探测设置较短超时，
+//! 长连接测速使用单独的客户端和阶段预算。
 //!
 //! 关键：读取 macOS / Windows 的系统代理设置并应用到 reqwest，
 //! 确保 VPN 客户端（Clash / Surge / V2RayU 等）的系统代理模式下检测流量也能走 VPN。
@@ -125,7 +125,8 @@ fn read_windows_proxy() -> Option<(&'static str, String, u16)> {
 #[cfg(target_os = "windows")]
 fn parse_proxy_url(url: &str) -> Option<(String, u16)> {
     let url = url.trim();
-    let addr = if let Some(rest) = url.strip_prefix("http://")
+    let addr = if let Some(rest) = url
+        .strip_prefix("http://")
         .or_else(|| url.strip_prefix("https://"))
         .or_else(|| url.strip_prefix("socks5://"))
         .or_else(|| url.strip_prefix("socks5h://"))
@@ -162,11 +163,10 @@ fn system_proxy_url() -> Option<String> {
     }
     #[cfg(target_os = "windows")]
     {
-        read_windows_proxy()
-            .map(|(ptype, host, port)| {
-                let scheme = if ptype == "socks" { "socks5h" } else { "http" };
-                format!("{}://{}:{}", scheme, host, port)
-            })
+        read_windows_proxy().map(|(ptype, host, port)| {
+            let scheme = if ptype == "socks" { "socks5h" } else { "http" };
+            format!("{}://{}:{}", scheme, host, port)
+        })
     }
     #[cfg(not(any(target_os = "macos", target_os = "windows")))]
     {
@@ -175,10 +175,15 @@ fn system_proxy_url() -> Option<String> {
 }
 
 pub fn client() -> reqwest::Client {
+    client_with_timeout(TIMEOUT)
+}
+
+/// 为长连接测速构建客户端，同时沿用系统代理配置。
+pub fn client_with_timeout(timeout: Duration) -> reqwest::Client {
     let mut builder = reqwest::Client::builder()
-        .timeout(TIMEOUT)
+        .timeout(timeout)
         .connect_timeout(Duration::from_secs(3))
-        .user_agent("MagicInspector/1.0 (+https://magicinspector.app)");
+        .user_agent("MagicInspector/1.1 (+https://github.com/AO-qifengle/magic-inspector)");
 
     // 应用系统代理（macOS 系统代理设置 / Windows 注册表代理）
     if let Some(proxy_url) = system_proxy_url() {

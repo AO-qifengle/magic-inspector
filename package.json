@@ -1,7 +1,7 @@
 {
   "name": "magic-inspector",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "魔法检测工具 - 一键检测当前网络环境是否安全",
   "type": "module",
   "scripts": {
@@ -10,7 +10,9 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "core:build": "tsc -p packages/core/tsconfig.json",
+    "test": "npm run build && npm run core:build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",

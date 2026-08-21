@@ -1,12 +1,17 @@
 //! Tauri 命令：编排整次检测，并通过事件向前端推送逐项进度。
 
 use crate::detection::{
-    self, ai_services, blacklist, dns, ipv6, ip, proxy, streaming, BackendReport,
-    ProgressPayload,
+    self, ai_services, blacklist, dns, ip, ipv6, proxy, streaming, BackendReport, ProgressPayload,
+};
+use std::sync::{
+    atomic::{AtomicBool, Ordering},
+    Arc, OnceLock,
 };
 use tauri::{AppHandle, Emitter};
 
 const EVENT: &str = "detection-progress";
+const SPEED_EVENT: &str = "speed-progress";
+static SPEED_CANCEL: OnceLock<Arc<AtomicBool>> = OnceLock::new();
 
 fn emit(app: &AppHandle, stage: &str, status: &str, label: &str) {
     let _ = app.emit(
@@ -65,4 +70,24 @@ pub async fn run_detection(app: AppHandle) -> Result<BackendReport, String> {
         ai_services: ai_info,
         streaming: stream_info,
     })
+}
+
+#[tauri::command]
+pub async fn run_speed_test(app: AppHandle) -> Result<detection::SpeedReport, String> {
+    let cancel = SPEED_CANCEL
+        .get_or_init(|| Arc::new(AtomicBool::new(false)))
+        .clone();
+    cancel.store(false, Ordering::Relaxed);
+    let report = detection::speed::run(cancel, |progress| {
+        let _ = app.emit(SPEED_EVENT, progress);
+    })
+    .await;
+    Ok(report)
+}
+
+#[tauri::command]
+pub fn cancel_speed_test() {
+    if let Some(cancel) = SPEED_CANCEL.get() {
+        cancel.store(true, Ordering::Relaxed);
+    }
 }
