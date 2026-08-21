@@ -57,8 +57,7 @@ pub async fn detect(public_ip: &str) -> BlacklistInfo {
                 hit_count: 0,
                 status: CheckStatus {
                     level: RiskLevel::Ok,
-                    summary: "当前为 IPv6 地址，多数公开黑名单不支持查询，已跳过。"
-                        .to_string(),
+                    summary: "当前为 IPv6 地址，多数公开黑名单不支持查询，已跳过。".to_string(),
                     error: None,
                 },
             };
@@ -103,6 +102,10 @@ pub async fn detect(public_ip: &str) -> BlacklistInfo {
         lists: entries,
         reputation_score,
         hit_count,
-        status: CheckStatus { level, summary, error: None },
+        status: CheckStatus {
+            level,
+            summary,
+            error: None,
+        },
     }
 }

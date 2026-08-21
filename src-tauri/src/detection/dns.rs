@@ -25,15 +25,14 @@ struct Conn {
 
 fn is_private(addr: &IpAddr) -> bool {
     match addr {
-        IpAddr::V4(v4) => {
-            v4.is_private() || v4.is_loopback() || v4.is_link_local()
+        IpAddr::V4(v4) => v4.is_private() || v4.is_loopback() || v4.is_link_local(),
+        IpAddr::V6(v6) => {
+            v6.is_loopback() || {
+                let seg = v6.segments();
+                // 唯一本地地址 fc00::/7
+                (seg[0] & 0xfe00) == 0xfc00 || seg[0] == 0xfe80 // 链路本地
+            }
         }
-        IpAddr::V6(v6) => v6.is_loopback() || {
-            let seg = v6.segments();
-            // 唯一本地地址 fc00::/7
-            (seg[0] & 0xfe00) == 0xfc00
-                || seg[0] == 0xfe80 // 链路本地
-        },
     }
 }
 
@@ -89,7 +88,11 @@ pub async fn detect(network: &NetworkInfo) -> DnsInfo {
             Some((country, isp)) => servers.push(DnsServer {
                 address: addr_str,
                 country,
-                isp: if isp.is_empty() { "—".to_string() } else { isp },
+                isp: if isp.is_empty() {
+                    "—".to_string()
+                } else {
+                    isp
+                },
             }),
             None => servers.push(DnsServer {
                 address: addr_str,

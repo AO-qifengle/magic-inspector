@@ -72,7 +72,7 @@ export function DetailPage({ report }: Props) {
 
       {/* WebRTC */}
       <Section title={t("section.webrtc")} explain={r.webrtc.status.summary}>
-        <Field label={t("field.webrtcLeak")} value={<BoolValue yes={r.webrtc.leaked} />} />
+        <Field label={t("field.webrtcLeak")} value={<WebRtcOutcome outcome={r.webrtc.outcome} />} />
         <Field
           label={t("field.localAddr")}
           value={
@@ -183,6 +183,16 @@ export function DetailPage({ report }: Props) {
           />
         ))}
       </Section>
+
+      <Section title={t("section.speed")} explain={t("speed.provider")}>
+        <Field label={t("speed.score")} value={<Mono>{r.speed.assessment.score}/100</Mono>} />
+        <Field label={t("speed.latency")} value={<SpeedValue value={r.speed.metrics.latency_ms} unit="ms" />} />
+        <Field label={t("speed.jitter")} value={<SpeedValue value={r.speed.metrics.jitter_ms} unit="ms" />} />
+        <Field label={t("speed.download")} value={<SpeedValue value={r.speed.metrics.download_mbps} unit="Mbps" />} />
+        <Field label={t("speed.upload")} value={<SpeedValue value={r.speed.metrics.upload_mbps} unit="Mbps" />} />
+        <Field label={t("speed.downloadLoaded")} value={<SpeedValue value={r.speed.metrics.download_loaded_latency_ms} unit="ms" />} />
+        <Field label={t("speed.uploadLoaded")} value={<SpeedValue value={r.speed.metrics.upload_loaded_latency_ms} unit="ms" />} />
+      </Section>
     </div>
   );
 }
@@ -226,6 +236,11 @@ function Mono({ children }: { children: ReactNode }) {
   return <span className="list-row-value-mono">{children}</span>;
 }
 
+function SpeedValue({ value, unit }: { value: number | null; unit: string }) {
+  const t = useT();
+  return <Mono>{value == null ? t("speed.notAvailable") : `${value.toFixed(1)} ${unit}`}</Mono>;
+}
+
 function BoolValue({ yes }: { yes: boolean }) {
   const t = useT();
   return (
@@ -233,6 +248,18 @@ function BoolValue({ yes }: { yes: boolean }) {
       {yes ? t("status.yes") : t("status.no")}
     </span>
   );
+}
+
+function WebRtcOutcome({ outcome }: { outcome: FullReport["webrtc"]["outcome"] }) {
+  const t = useT();
+  const labels = {
+    leak: "webrtc.outcome.leak",
+    clear: "webrtc.outcome.clear",
+    inconclusive: "webrtc.outcome.inconclusive",
+    unsupported: "webrtc.outcome.unsupported",
+  } as const;
+  const className = outcome === "leak" ? "detail-bool-yes" : outcome === "clear" ? "detail-bool-no" : "text-tertiary";
+  return <span className={className}>{t(labels[outcome])}</span>;
 }
 
 function Pills({ values }: { values: string[] }) {

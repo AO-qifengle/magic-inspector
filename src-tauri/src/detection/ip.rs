@@ -55,18 +55,58 @@ struct IpApiResponse {
 pub fn classify_ip_type(org: &str, isp: &str) -> IpType {
     let blob = format!("{} {}", org, isp).to_lowercase();
     let mobile_kw = [
-        "mobile", "wireless", "cellular", "t-mobile", "verizon wireless",
-        "at&t mobility", "china mobile", "chinamobile", "telecom mobile",
-        "orange mobile", "vodafone mobile",
+        "mobile",
+        "wireless",
+        "cellular",
+        "t-mobile",
+        "verizon wireless",
+        "at&t mobility",
+        "china mobile",
+        "chinamobile",
+        "telecom mobile",
+        "orange mobile",
+        "vodafone mobile",
     ];
     let dc_kw = [
-        "hosting", "data center", "datacenter", "cloud", "ovh", "digitalocean",
-        "amazon", "aws", "google cloud", "google llc", "microsoft", "azure",
-        "linode", "vultr", "hetzner", "contabo", "leaseweb", "m247", "choopa",
-        "cloudflare", "alibaba", "tencent", "huawei cloud", "oracle", "ibm cloud",
-        "scaleway", "upcloud", "kamatera", "server", "colo", "colocation",
-        "datacamp", "akamai", "fastly", "m247 ltd", "greenhost", "nexus bytes",
-        "eons data", "communications limited",
+        "hosting",
+        "data center",
+        "datacenter",
+        "cloud",
+        "ovh",
+        "digitalocean",
+        "amazon",
+        "aws",
+        "google cloud",
+        "google llc",
+        "microsoft",
+        "azure",
+        "linode",
+        "vultr",
+        "hetzner",
+        "contabo",
+        "leaseweb",
+        "m247",
+        "choopa",
+        "cloudflare",
+        "alibaba",
+        "tencent",
+        "huawei cloud",
+        "oracle",
+        "ibm cloud",
+        "scaleway",
+        "upcloud",
+        "kamatera",
+        "server",
+        "colo",
+        "colocation",
+        "datacamp",
+        "akamai",
+        "fastly",
+        "m247 ltd",
+        "greenhost",
+        "nexus bytes",
+        "eons data",
+        "communications limited",
     ];
     if mobile_kw.iter().any(|k| blob.contains(k)) {
         return IpType::Mobile;
@@ -121,13 +161,15 @@ async fn from_ipwho() -> Option<NetworkInfo> {
         country: none_if_empty(data.country.unwrap_or_default()),
         country_code: data.country_code.unwrap_or_default(),
         city: none_if_empty(data.city.unwrap_or_default()),
-        asn: if asn.is_empty() { "—".to_string() } else { asn },
+        asn: if asn.is_empty() {
+            "—".to_string()
+        } else {
+            asn
+        },
         isp: none_if_empty(isp.clone()),
         organization: none_if_empty(org.clone()),
         ip_type: classify_ip_type(&org, &isp),
-        timezone: none_if_empty(
-            data.timezone.and_then(|t| t.id).unwrap_or_default(),
-        ),
+        timezone: none_if_empty(data.timezone.and_then(|t| t.id).unwrap_or_default()),
         ipv4: None,
         ipv6: None,
     })
@@ -160,8 +202,7 @@ async fn from_ipapi() -> Option<NetworkInfo> {
 /// 也返回 ip-api.com 的原始托管/代理/移动信号，供 proxy 模块复用。
 pub async fn fetch_raw_signals() -> Option<(bool, bool, bool)> {
     let data: IpApiResponse =
-        http::fetch_json("http://ip-api.com/json/?fields=status,mobile,proxy,hosting")
-            .await?;
+        http::fetch_json("http://ip-api.com/json/?fields=status,mobile,proxy,hosting").await?;
     if data.status.as_deref() != Some("success") {
         return None;
     }
@@ -207,7 +248,11 @@ fn fallback_unknown() -> NetworkInfo {
 }
 
 /// 给 IP 信息补充 IPv4 / IPv6 公网地址（由 ipv6 模块调用）。
-pub fn with_addresses(mut info: NetworkInfo, v4: Option<String>, v6: Option<String>) -> NetworkInfo {
+pub fn with_addresses(
+    mut info: NetworkInfo,
+    v4: Option<String>,
+    v6: Option<String>,
+) -> NetworkInfo {
     if v4.is_some() {
         info.ipv4 = v4;
     }

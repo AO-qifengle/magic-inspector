@@ -1,0 +1,12 @@
+{
+  "name": "@ao-qifengle/magic-inspector-core",
+  "version": "1.1.0",
+  "description": "Shared scoring and network assessment primitives for Magic Inspector",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": { "build": "tsc -p tsconfig.json" },
+  "publishConfig": { "registry": "https://npm.pkg.github.com" },
+  "license": "MIT"
+}

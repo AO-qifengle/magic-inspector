@@ -34,10 +34,7 @@ pub async fn detect(network: &NetworkInfo) -> (Ipv6Info, Option<String>) {
         Some(ip) => {
             let v6_country = geolocate_country(ip).await;
             match v6_country {
-                Some(c) => {
-                    !network.country.is_empty()
-                        && !c.eq_ignore_ascii_case(&network.country)
-                }
+                Some(c) => !network.country.is_empty() && !c.eq_ignore_ascii_case(&network.country),
                 None => false,
             }
         }

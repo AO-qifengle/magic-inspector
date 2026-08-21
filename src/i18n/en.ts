@@ -17,15 +17,46 @@ export const en: Record<TranslationKey, string> = {
   "stage.proxy": "Proxy",
   "stage.ai": "AI Services",
   "stage.streaming": "Streaming",
+  "stage.speed": "Network Quality",
 
   "detection.title": "Inspecting your network",
   "detection.subtitle": "Analyzing each item, please wait…",
   "detection.complete": "Inspection complete",
   "detection.failed": "Inspection failed, please retry",
 
+  "speed.phase.latency": "Measuring idle latency",
+  "speed.phase.download": "Measuring download speed",
+  "speed.phase.upload": "Measuring upload speed",
+  "speed.trafficNotice": "Standard test takes about 12–20 seconds and usually uses 20–100 MB",
+  "speed.cancel": "Cancel speed test",
+  "speed.title": "Network Quality",
+  "speed.score": "Quality score",
+  "speed.latency": "Idle latency",
+  "speed.jitter": "Jitter",
+  "speed.download": "Download",
+  "speed.upload": "Upload",
+  "speed.downloadLoaded": "Download loaded latency",
+  "speed.uploadLoaded": "Upload loaded latency",
+  "speed.browsing": "Web browsing",
+  "speed.streaming4k": "4K streaming",
+  "speed.videoCall": "Video calls",
+  "speed.gaming": "Real-time gaming",
+  "speed.notAvailable": "Not completed",
+  "speed.partial": "The speed test did not fully complete; showing available results",
+  "speed.provider": "Provider: Cloudflare edge network",
+  "history.title": "Inspection history",
+  "history.empty": "No inspection history yet",
+  "history.emptyHint": "Completed reports are saved locally for later review.",
+  "history.delete": "Delete record",
+  "history.clear": "Clear history",
+  "history.confirmClear": "Confirm clear",
+
   "report.healthScore": "Network Health",
   "report.viewDetails": "View Detailed Report",
   "report.retest": "Run Again",
+  "report.copy": "Copy summary",
+  "report.copied": "Summary copied",
+  "report.export": "Export JSON",
   "report.recommendation": "Recommendation",
   "report.overall": "Overall",
   "report.sections": "Results",
@@ -76,6 +107,10 @@ export const en: Record<TranslationKey, string> = {
   "status.noLeak": "No leak",
   "status.notListed": "Not listed",
   "status.listed": "Listed",
+  "webrtc.outcome.leak": "Leaking",
+  "webrtc.outcome.clear": "No issue found",
+  "webrtc.outcome.inconclusive": "Inconclusive",
+  "webrtc.outcome.unsupported": "Unsupported",
 
   "ipType.residential": "Residential",
   "ipType.datacenter": "Datacenter",
@@ -90,6 +125,7 @@ export const en: Record<TranslationKey, string> = {
   "section.vpn": "VPN Detection",
   "section.ai": "AI Service Compatibility",
   "section.streaming": "Streaming",
+  "section.speed": "Network Quality",
 
   "field.publicIp": "Public IP",
   "field.country": "Country",
@@ -109,7 +145,7 @@ export const en: Record<TranslationKey, string> = {
   "field.riskNote": "Risk Note",
   "field.none": "None",
 
-  "field.webrtcLeak": "Leaking",
+  "field.webrtcLeak": "Result",
   "field.localAddr": "Local Address",
   "field.publicAddr": "Public Address",
 
@@ -155,9 +191,13 @@ export const en: Record<TranslationKey, string> = {
     "Could not read system DNS config. DNS leak status is unknown.",
 
   "explain.webrtc.leak":
-    "WebRTC is exposing your real IP. That means sites can bypass your proxy via WebRTC to find your real address.",
-  "explain.webrtc.ok":
-    "WebRTC is not leaking your real IP. Sites can't discover it via WebRTC.",
+    "A WebRTC candidate in this app exposed a public IP that differs from the HTTP egress IP. It may be bypassing the proxy.",
+  "explain.webrtc.clear":
+    "This test found no mismatch between WebRTC public candidates and the HTTP egress IP. It applies only to this app's WebView.",
+  "explain.webrtc.inconclusive":
+    "No comparable WebRTC public candidate was collected. STUN may be blocked or unsupported, so a leak cannot be ruled out.",
+  "explain.webrtc.unsupported":
+    "WebRTC is not supported by this app environment, so this check could not run.",
 
   "explain.ipv6.leak":
     "An IPv6 address was found and it doesn't match your IPv4 region. Your proxy may not cover IPv6 traffic — a leak is possible.",
@@ -189,6 +229,8 @@ export const en: Record<TranslationKey, string> = {
   "settings.version": "Version",
   "settings.checkUpdate": "Check for Updates",
   "settings.upToDate": "Up to date",
+  "settings.newVersion": "Version {version} is available. Open the download page?",
+  "settings.updateError": "Check failed",
   "settings.privacy": "Privacy",
   "settings.privacyBody":
     "Magic Inspector never uploads your inspection data. All checks run locally by default. When a public API is needed (e.g. IP geolocation), only the necessary network request is sent. We never collect browsing history, accounts, cookies, passwords, proxy config, or any personal information.",

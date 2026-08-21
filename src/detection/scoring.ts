@@ -11,23 +11,52 @@ import type {
   FullReport,
   NetworkInfo,
   RiskLevel,
+  SpeedReport,
   WebRtcInfo,
 } from "../types/report";
 import type { WebRtcRaw } from "./webrtc";
 
+function normalizeIp(ip: string): string {
+  const value = ip.trim().replace(/^\[|\]$/g, "").toLowerCase().split("%")[0];
+  if (!value.includes(":")) return value;
+
+  const [head, tail = ""] = value.split("::");
+  const left = head ? head.split(":") : [];
+  const right = tail ? tail.split(":") : [];
+  if (value.includes("::")) return [...left, ...Array(8 - left.length - right.length).fill("0"), ...right]
+    .map((part) => part.padStart(4, "0"))
+    .join(":");
+  return value.split(":").map((part) => part.padStart(4, "0")).join(":");
+}
+
 /** 根据 WebRTC 原始候选与公网 IP 判定是否泄露。 */
 export function evaluateWebRtc(raw: WebRtcRaw, network: NetworkInfo, t: TFn): WebRtcInfo {
   const egress = new Set<string>();
-  if (network.public_ip && network.public_ip !== "—") egress.add(network.public_ip);
-  if (network.ipv6) egress.add(network.ipv6);
+  if (network.public_ip && network.public_ip !== "—") egress.add(normalizeIp(network.public_ip));
+  if (network.ipv6) egress.add(normalizeIp(network.ipv6));
 
-  const divergent = raw.public_candidates.find((ip) => !egress.has(ip));
+  const divergent = raw.public_candidates.find((ip) => !egress.has(normalizeIp(ip)));
 
-  const leaked = Boolean(divergent);
-  const level: RiskLevel = leaked ? "risk" : "ok";
-  const summary = leaked ? t("explain.webrtc.leak") : t("explain.webrtc.ok");
+  const outcome: WebRtcInfo["outcome"] = !raw.supported
+    ? "unsupported"
+    : divergent
+      ? "leak"
+      : raw.gathering_complete && raw.public_candidates.length > 0
+        ? "clear"
+        : "inconclusive";
+
+  const leaked = outcome === "leak";
+  const level: RiskLevel = leaked ? "risk" : outcome === "clear" ? "ok" : "warn";
+  const summaryKey = {
+    leak: "explain.webrtc.leak",
+    clear: "explain.webrtc.clear",
+    inconclusive: "explain.webrtc.inconclusive",
+    unsupported: "explain.webrtc.unsupported",
+  } as const;
+  const summary = t(summaryKey[outcome]);
 
   return {
+    outcome,
     leaked,
     local_addresses: raw.local_addresses,
     public_address: divergent ?? null,
@@ -164,6 +193,7 @@ function buildRecommendations(
 export function buildFullReport(
   backend: BackendReport,
   webrtcRaw: WebRtcRaw,
+  speed: SpeedReport,
   t: TFn,
 ): FullReport {
   const webrtc = evaluateWebRtc(webrtcRaw, backend.network, t);
@@ -198,6 +228,7 @@ export function buildFullReport(
     proxy,
     ai_services: backend.ai_services,
     streaming: backend.streaming,
+    speed,
     score,
     score_level: level,
     conclusion: t(key),

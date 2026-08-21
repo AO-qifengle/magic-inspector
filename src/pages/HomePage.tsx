@@ -4,10 +4,11 @@ import hatIcon from "../assets/hat.png";
 interface Props {
   onStart: () => void;
   onOpenSettings: () => void;
+  onOpenHistory: () => void;
 }
 
 /** 首页：极简居中布局，标题 + 检测环 + 开始按钮。 */
-export function HomePage({ onStart, onOpenSettings }: Props) {
+export function HomePage({ onStart, onOpenSettings, onOpenHistory }: Props) {
   const t = useT();
 
   return (
@@ -24,43 +25,22 @@ export function HomePage({ onStart, onOpenSettings }: Props) {
       }}
     >
       <button
-        className="nav-btn"
         onClick={onOpenSettings}
         aria-label={t("settings.title")}
+        className="nav-btn"
         style={{ position: "absolute", top: 8, right: 8 }}
       >
         <GearIcon />
       </button>
 
       <div className="fade-up" style={{ marginBottom: "var(--space-10)" }}>
-        <h1
-          style={{
-            fontSize: 30,
-            fontWeight: 600,
-            letterSpacing: "-0.03em",
-            color: "var(--text-primary)",
-          }}
-        >
+        <h1 style={{ fontSize: 30, fontWeight: 600, letterSpacing: "-0.03em", color: "var(--text-primary)" }}>
           {t("app.name")}
         </h1>
-        <p
-          style={{
-            marginTop: 6,
-            fontSize: 15,
-            color: "var(--text-secondary)",
-          }}
-        >
-          {t("app.tagline")}
-        </p>
+        <p style={{ marginTop: 6, fontSize: 15, color: "var(--text-secondary)" }}>{t("app.tagline")}</p>
       </div>
 
-      {/* 魔法帽图标 */}
-      <button
-        onClick={onStart}
-        aria-label={t("home.start")}
-        className="home-icon-btn fade-up"
-        style={{ animationDelay: "80ms" }}
-      >
+      <button onClick={onStart} aria-label={t("home.start")} className="home-icon-btn fade-up" style={{ animationDelay: "80ms" }}>
         <img src={hatIcon} alt="" className="home-icon-img" />
       </button>
 
@@ -74,23 +54,18 @@ export function HomePage({ onStart, onOpenSettings }: Props) {
 
       <p
         className="note fade-in"
-        style={{
-          marginTop: "var(--space-6)",
-          maxWidth: 420,
-          animationDelay: "240ms",
-        }}
+        style={{ marginTop: "var(--space-6)", maxWidth: 420, animationDelay: "240ms" }}
       >
         {t("home.subtitle")}
       </p>
 
+      <button className="btn-ghost fade-in" type="button" style={{ animationDelay: "300ms" }} onClick={onOpenHistory}>
+        {t("history.title")}
+      </button>
+
       <p
         className="note fade-in"
-        style={{
-          position: "absolute",
-          bottom: "var(--space-6)",
-          color: "var(--text-tertiary)",
-          fontSize: 12,
-        }}
+        style={{ position: "absolute", bottom: "var(--space-6)", color: "var(--text-tertiary)", fontSize: 12 }}
       >
         {t("home.privacy")}
       </p>

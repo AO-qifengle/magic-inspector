@@ -19,15 +19,46 @@ export const zh = {
   "stage.proxy": "代理检测",
   "stage.ai": "AI 服务检测",
   "stage.streaming": "流媒体",
+  "stage.speed": "网络质量",
 
   "detection.title": "正在检测当前网络环境",
   "detection.subtitle": "正在逐项分析，请稍候……",
   "detection.complete": "检测完成",
   "detection.failed": "检测失败，请重试",
 
+  "speed.phase.latency": "测量空载延迟",
+  "speed.phase.download": "测量下载速度",
+  "speed.phase.upload": "测量上传速度",
+  "speed.trafficNotice": "标准测速约需 12–20 秒，通常消耗 20–100 MB",
+  "speed.cancel": "取消测速",
+  "speed.title": "网络质量",
+  "speed.score": "网络质量分",
+  "speed.latency": "空载延迟",
+  "speed.jitter": "抖动",
+  "speed.download": "下载速度",
+  "speed.upload": "上传速度",
+  "speed.downloadLoaded": "下载负载延迟",
+  "speed.uploadLoaded": "上传负载延迟",
+  "speed.browsing": "网页浏览",
+  "speed.streaming4k": "4K 流媒体",
+  "speed.videoCall": "视频通话",
+  "speed.gaming": "实时游戏",
+  "speed.notAvailable": "未完成",
+  "speed.partial": "测速未完整完成，以下为已取得结果",
+  "speed.provider": "测速服务：Cloudflare 边缘网络",
+  "history.title": "检测历史",
+  "history.empty": "还没有检测记录",
+  "history.emptyHint": "完成一次检测后，结果会保存在本机供你回看。",
+  "history.delete": "删除记录",
+  "history.clear": "清空历史记录",
+  "history.confirmClear": "确认清空",
+
   "report.healthScore": "网络健康度",
   "report.viewDetails": "查看详细报告",
   "report.retest": "重新检测",
+  "report.copy": "复制摘要",
+  "report.copied": "摘要已复制",
+  "report.export": "导出 JSON",
   "report.recommendation": "建议",
   "report.overall": "总体结论",
   "report.sections": "各项结果",
@@ -74,6 +105,10 @@ export const zh = {
   "status.noLeak": "未泄露",
   "status.notListed": "未命中",
   "status.listed": "命中",
+  "webrtc.outcome.leak": "存在泄露",
+  "webrtc.outcome.clear": "未发现异常",
+  "webrtc.outcome.inconclusive": "无法确认",
+  "webrtc.outcome.unsupported": "不支持",
 
   "ipType.residential": "家庭宽带",
   "ipType.datacenter": "数据中心",
@@ -88,6 +123,7 @@ export const zh = {
   "section.vpn": "VPN 检测",
   "section.ai": "AI 服务兼容性",
   "section.streaming": "流媒体",
+  "section.speed": "网络质量",
 
   "field.publicIp": "公网 IP",
   "field.country": "国家",
@@ -107,7 +143,7 @@ export const zh = {
   "field.riskNote": "风险说明",
   "field.none": "无",
 
-  "field.webrtcLeak": "是否泄露",
+  "field.webrtcLeak": "检测结果",
   "field.localAddr": "本地地址",
   "field.publicAddr": "公网地址",
 
@@ -151,9 +187,13 @@ export const zh = {
   "explain.dns.unknown": "无法读取系统 DNS 配置，DNS 泄露情况未知。",
 
   "explain.webrtc.leak":
-    "检测到 WebRTC 暴露了你的真实 IP。这意味着网站可通过 WebRTC 绕过代理获取你的真实地址。",
-  "explain.webrtc.ok":
-    "WebRTC 未暴露真实 IP。这意味着网站无法通过 WebRTC 获取你的真实地址。",
+    "检测到当前应用的 WebRTC 候选暴露了与 HTTP 出口不同的公网 IP，可能绕过代理。",
+  "explain.webrtc.clear":
+    "本次测试未发现 WebRTC 公网候选与 HTTP 出口 IP 不一致。该结果仅适用于当前应用的 WebView 环境。",
+  "explain.webrtc.inconclusive":
+    "未收集到可用于比对的 WebRTC 公网候选，可能是 STUN 被拦截或网络不支持；无法确认是否存在泄露。",
+  "explain.webrtc.unsupported":
+    "当前应用环境不支持 WebRTC，无法执行此项检测。",
 
   "explain.ipv6.leak":
     "检测到 IPv6 公网地址，且与 IPv4 归属不一致。这意味着你的代理可能未覆盖 IPv6 流量，存在泄露。",
@@ -180,6 +220,8 @@ export const zh = {
   "settings.version": "版本",
   "settings.checkUpdate": "检查更新",
   "settings.upToDate": "已是最新版本",
+  "settings.newVersion": "发现新版本 {version}，是否打开下载页面？",
+  "settings.updateError": "检查失败",
   "settings.privacy": "隐私说明",
   "settings.privacyBody":
     "魔法检测工具不会上传任何检测数据，所有检测默认在本地完成。当需要调用公开网络接口（如 IP 归属查询）时，仅发送必要的网络请求，绝不收集浏览记录、账号、Cookie、密码、代理配置或任何个人信息。",

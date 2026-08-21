@@ -2,6 +2,7 @@ import { ScoreRing } from "../components/ScoreRing";
 import { StatusBadge } from "../components/StatusBadge";
 import { useT, type TranslationKey } from "../i18n";
 import type { FullReport, RiskLevel, StageId } from "../types/report";
+import { copyReport, downloadReport } from "../report/export";
 
 interface Props {
   report: FullReport;
@@ -33,8 +34,8 @@ export function ReportPage({ report, onViewDetail, onRetest }: Props) {
     },
     {
       id: "webrtc",
-      level: report.webrtc.leaked ? "risk" : "ok",
-      label: report.webrtc.leaked ? "status.risk" : "status.normal",
+      level: report.webrtc.status.level,
+      label: webRtcLabel(report.webrtc.outcome),
     },
     {
       id: "ipv6",
@@ -66,6 +67,11 @@ export function ReportPage({ report, onViewDetail, onRetest }: Props) {
       level: aiAggregateLevel(report),
       label: aiAggregateLabel(report),
     },
+    {
+      id: "streaming",
+      level: streamingAggregateLevel(report),
+      label: streamingAggregateLabel(report),
+    },
   ];
 
   return (
@@ -82,14 +88,15 @@ export function ReportPage({ report, onViewDetail, onRetest }: Props) {
       </div>
       <div className="list-group fade-up" style={{ animationDelay: "180ms" }}>
         {rows.map((row) => (
-          <div
+          <button
             key={row.id}
             className="list-row list-row-clickable"
             onClick={onViewDetail}
+            type="button"
           >
             <span className="list-row-label">{t(stageKey(row.id))}</span>
             <StatusBadge level={row.level} label={t(row.label)} />
-          </div>
+          </button>
         ))}
       </div>
 
@@ -105,9 +112,20 @@ export function ReportPage({ report, onViewDetail, onRetest }: Props) {
         ))}
       </div>
 
+      <div className="report-section-title fade-in" style={{ animationDelay: "280ms" }}>
+        {t("section.speed")}
+      </div>
+      <SpeedSummary report={report} />
+
       <div className="report-actions fade-up" style={{ animationDelay: "320ms" }}>
         <button className="btn-ghost" onClick={onRetest}>
           {t("report.retest")}
+        </button>
+        <button className="btn-ghost" onClick={() => void copyReport(report).then(() => alert(t("report.copied"))).catch(() => alert(t("settings.updateError")))}>
+          {t("report.copy")}
+        </button>
+        <button className="btn-ghost" onClick={() => downloadReport(report)}>
+          {t("report.export")}
         </button>
         <button className="btn-primary" onClick={onViewDetail}>
           {t("report.viewDetails")}
@@ -144,6 +162,68 @@ function aiAggregateLabel(report: FullReport): TranslationKey {
   return "aiLevel.risk";
 }
 
+function streamingAggregateLevel(report: FullReport): RiskLevel {
+  const services = report.streaming.services;
+  if (!services.length) return "warn";
+  const accessible = services.filter((service) => service.accessible).length;
+  return accessible === services.length ? "ok" : accessible === 0 ? "risk" : "warn";
+}
+
+function streamingAggregateLabel(report: FullReport): TranslationKey {
+  const level = streamingAggregateLevel(report);
+  return level === "ok" ? "status.normal" : level === "warn" ? "status.lowRisk" : "status.risk";
+}
+
+function SpeedSummary({ report }: { report: FullReport }) {
+  const t = useT();
+  const m = report.speed.metrics;
+  const value = (n: number | null, unit: string) => n == null ? t("speed.notAvailable") : `${n.toFixed(1)} ${unit}`;
+  const useCaseKeys = {
+    browsing: "speed.browsing",
+    streaming4k: "speed.streaming4k",
+    video_call: "speed.videoCall",
+    gaming: "speed.gaming",
+  } as const;
+  return (
+    <div className="speed-summary fade-up">
+      <div className="speed-score-row">
+        <span>{t("speed.score")}</span>
+        <strong className="mono">{report.speed.assessment.score}/100</strong>
+      </div>
+      <div className="speed-metric-grid">
+        <Metric label={t("speed.latency")} value={value(m.latency_ms, "ms")} />
+        <Metric label={t("speed.jitter")} value={value(m.jitter_ms, "ms")} />
+        <Metric label={t("speed.download")} value={value(m.download_mbps, "Mbps")} />
+        <Metric label={t("speed.upload")} value={value(m.upload_mbps, "Mbps")} />
+        <Metric label={t("speed.downloadLoaded")} value={value(m.download_loaded_latency_ms, "ms")} />
+        <Metric label={t("speed.uploadLoaded")} value={value(m.upload_loaded_latency_ms, "ms")} />
+      </div>
+      <div className="speed-usecases">
+        {report.speed.assessment.use_cases.map((item) => (
+          <div className="speed-usecase" key={item.id}>
+            <span>{t(useCaseKeys[item.id])}</span><span className="mono">{item.score}/100</span>
+          </div>
+        ))}
+      </div>
+      <p className="muted" style={{ marginTop: 12 }}>{report.speed.metrics.status === "complete" ? t("speed.provider") : t("speed.partial")}</p>
+    </div>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return <div className="speed-metric"><span>{label}</span><strong className="mono">{value}</strong></div>;
+}
+
+function webRtcLabel(outcome: FullReport["webrtc"]["outcome"]): TranslationKey {
+  const labels = {
+    leak: "webrtc.outcome.leak",
+    clear: "webrtc.outcome.clear",
+    inconclusive: "webrtc.outcome.inconclusive",
+    unsupported: "webrtc.outcome.unsupported",
+  } as const;
+  return labels[outcome];
+}
+
 function stageKey(id: StageId): TranslationKey {
   const map: Record<StageId, TranslationKey> = {
     ip: "section.network",
@@ -154,6 +234,7 @@ function stageKey(id: StageId): TranslationKey {
     proxy: "section.vpn",
     ai: "section.ai",
     streaming: "section.streaming",
+    speed: "section.speed",
   };
   return map[id];
 }

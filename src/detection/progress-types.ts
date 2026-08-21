@@ -4,3 +4,10 @@ export interface ProgressPayload {
   status: string;
   label: string;
 }
+
+export interface SpeedProgress {
+  phase: "latency" | "download" | "upload";
+  progress: number;
+  mbps: number | null;
+  bytes: number;
+}

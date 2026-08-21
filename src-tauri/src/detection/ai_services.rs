@@ -55,10 +55,9 @@ pub async fn detect(is_hosting: bool) -> AiServicesInfo {
                     RiskLevel::Warn,
                     "可访问，但当前为数据中心 IP，可能遇到验证码或风控。".to_string(),
                 ),
-                (true, Some(ms), false) if ms < 800 => (
-                    RiskLevel::Ok,
-                    "访问流畅，适合日常使用。".to_string(),
-                ),
+                (true, Some(ms), false) if ms < 800 => {
+                    (RiskLevel::Ok, "访问流畅，适合日常使用。".to_string())
+                }
                 (true, _, _) => (
                     RiskLevel::Warn,
                     "可访问但响应较慢，体验可能受影响。".to_string(),

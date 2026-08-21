@@ -7,42 +7,54 @@ import { DetailPage } from "./pages/DetailPage";
 import { HomePage } from "./pages/HomePage";
 import { ReportPage } from "./pages/ReportPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { HistoryPage } from "./pages/HistoryPage";
+import { clearReports, listReports, removeReport, saveReport, type ReportSnapshot } from "./history/reportHistory";
+import type { FullReport } from "./types/report";
 
-type View = "home" | "detecting" | "report" | "detail" | "settings";
+type View = "home" | "detecting" | "report" | "detail" | "settings" | "history";
 
 export default function App() {
   const t = useT();
   const detection = useDetection();
   const { status, report, start, reset } = detection;
   const [view, setView] = useState<View>("home");
+  const [history, setHistory] = useState<ReportSnapshot[]>(() => listReports());
+  const [historyReport, setHistoryReport] = useState<FullReport | null>(null);
 
   // 检测完成后自动进入报告页
   useEffect(() => {
     if (status === "done" && report) {
+      saveReport(report);
+      setHistory(listReports());
+      setHistoryReport(null);
       setView("report");
     }
   }, [status, report]);
 
   const handleStart = () => {
+    setHistoryReport(null);
     setView("detecting");
     void start();
   };
 
   const handleRetest = () => {
+    setHistoryReport(null);
     reset();
     setView("detecting");
     void start();
   };
 
   const handleSettingsBack = () => {
-    setView(report ? "report" : "home");
+    setView(historyReport ? "history" : report ? "report" : "home");
   };
+
+  const displayedReport = historyReport ?? report;
 
   return (
     <div className="app-shell">
       {view === "home" && (
         <div className="app-content">
-          <HomePage onStart={handleStart} onOpenSettings={() => setView("settings")} />
+          <HomePage onStart={handleStart} onOpenSettings={() => setView("settings")} onOpenHistory={() => setView("history")} />
         </div>
       )}
 
@@ -54,20 +66,22 @@ export default function App() {
             status={status}
             error={detection.error}
             onRetry={handleRetest}
+            speedProgress={detection.speedProgress}
+            onCancel={detection.cancel}
           />
         </div>
       )}
 
-      {view === "report" && report && (
+      {view === "report" && displayedReport && (
         <>
           <Navbar
             title={t("app.name")}
-            onBack={() => setView("home")}
+            onBack={() => setView(historyReport ? "history" : "home")}
             right={<GearButton onClick={() => setView("settings")} />}
           />
           <div className="app-content">
             <ReportPage
-              report={report}
+              report={displayedReport}
               onViewDetail={() => setView("detail")}
               onRetest={handleRetest}
             />
@@ -75,14 +89,14 @@ export default function App() {
         </>
       )}
 
-      {view === "detail" && report && (
+      {view === "detail" && displayedReport && (
         <>
           <Navbar
             title={t("report.viewDetails")}
             onBack={() => setView("report")}
           />
           <div className="app-content">
-            <DetailPage report={report} />
+            <DetailPage report={displayedReport} />
           </div>
         </>
       )}
@@ -92,6 +106,20 @@ export default function App() {
           <Navbar title={t("settings.title")} onBack={handleSettingsBack} />
           <div className="app-content">
             <SettingsPage />
+          </div>
+        </>
+      )}
+
+      {view === "history" && (
+        <>
+          <Navbar title={t("history.title")} onBack={() => setView("home")} />
+          <div className="app-content">
+            <HistoryPage
+              items={history}
+              onOpen={(item) => { setHistoryReport(item.report); setView("report"); }}
+              onDelete={(id) => { removeReport(id); setHistory(listReports()); }}
+              onClear={() => { clearReports(); setHistory([]); }}
+            />
           </div>
         </>
       )}

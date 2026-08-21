@@ -4,8 +4,8 @@
 
 import { invoke } from "@tauri-apps/api/core";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import type { BackendReport, StageId, StageState } from "../types/report";
-import type { ProgressPayload } from "./progress-types";
+import type { BackendReport, SpeedReport, StageId, StageState } from "../types/report";
+import type { ProgressPayload, SpeedProgress } from "./progress-types";
 
 export const PROGRESS_EVENT = "detection-progress";
 
@@ -19,7 +19,8 @@ function toStageId(stage: string): StageId {
     "blacklist",
     "proxy",
     "ai",
-    "streaming",
+  "streaming",
+    "speed",
   ];
   return (known as string[]).includes(stage) ? (stage as StageId) : "streaming";
 }
@@ -40,4 +41,18 @@ export async function onDetectionProgress(
 /** 调用后端执行整次检测，返回后端报告。 */
 export async function runDetection(): Promise<BackendReport> {
   return invoke<BackendReport>("run_detection");
+}
+
+export const SPEED_PROGRESS_EVENT = "speed-progress";
+
+export async function onSpeedProgress(cb: (progress: SpeedProgress) => void): Promise<UnlistenFn> {
+  return listen<SpeedProgress>(SPEED_PROGRESS_EVENT, (event) => cb(event.payload));
+}
+
+export function runSpeedTest(): Promise<SpeedReport> {
+  return invoke<SpeedReport>("run_speed_test");
+}
+
+export function cancelSpeedTest(): Promise<void> {
+  return invoke("cancel_speed_test");
 }

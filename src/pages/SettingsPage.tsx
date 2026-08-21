@@ -1,12 +1,25 @@
 import { useState } from "react";
 import { useSettings } from "../settings/useSettings";
 import { useT } from "../i18n";
+import { APP_VERSION, checkForUpdate, type UpdateInfo } from "../update/check";
 
 /** 设置页：语言 / 主题 / 关于 / 隐私说明。 */
 export function SettingsPage() {
   const t = useT();
   const { language, setLanguage, theme, setTheme } = useSettings();
   const [showPrivacy, setShowPrivacy] = useState(false);
+  const [update, setUpdate] = useState<"idle" | "checking" | "latest" | "error">("idle");
+  const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null);
+
+  const handleUpdate = async () => {
+    setUpdate("checking");
+    try {
+      const info = await checkForUpdate();
+      setUpdateInfo(info);
+      setUpdate(info ? "idle" : "latest");
+      if (info && window.confirm(t("settings.newVersion", { version: info.latest }))) window.open(info.url, "_blank");
+    } catch { setUpdate("error"); }
+  };
 
   return (
     <div className="page">
@@ -50,19 +63,20 @@ export function SettingsPage() {
       <div className="list-group">
         <div className="list-row">
           <span className="list-row-label">{t("settings.version")}</span>
-          <span className="list-row-value">1.0.0</span>
+          <span className="list-row-value">{APP_VERSION}</span>
         </div>
-        <div className="list-row list-row-clickable" onClick={() => alert(t("settings.upToDate"))}>
+        <button className="list-row list-row-clickable" type="button" onClick={() => void handleUpdate()} disabled={update === "checking"}>
           <span className="list-row-label">{t("settings.checkUpdate")}</span>
-          <ChevronRight />
-        </div>
-        <div
+          <span className="list-row-value">{update === "checking" ? t("common.loading") : update === "latest" ? t("settings.upToDate") : update === "error" ? t("settings.updateError") : updateInfo?.latest ?? <ChevronRight />}</span>
+        </button>
+        <button
           className="list-row list-row-clickable"
+          type="button"
           onClick={() => setShowPrivacy((v) => !v)}
         >
           <span className="list-row-label">{t("settings.privacy")}</span>
           <ChevronRight />
-        </div>
+        </button>
       </div>
 
       {showPrivacy && (
@@ -85,10 +99,10 @@ function SelectRow({
   onSelect: () => void;
 }) {
   return (
-    <div className="list-row list-row-clickable" onClick={onSelect}>
+    <button className="list-row list-row-clickable" type="button" onClick={onSelect} aria-pressed={selected}>
       <span className="list-row-label">{label}</span>
       {selected && <Checkmark />}
-    </div>
+    </button>
   );
 }
 
@@ -119,5 +133,3 @@ function ChevronRight() {
     </svg>
   );
 }
-
-

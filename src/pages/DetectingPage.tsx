@@ -1,6 +1,7 @@
 import { useT } from "../i18n";
 import type { DetectionStatus } from "../hooks/useDetection";
 import type { StageId, StageState } from "../types/report";
+import type { SpeedProgress } from "../detection/progress-types";
 
 interface Props {
   stages: Record<StageId, StageState>;
@@ -8,9 +9,11 @@ interface Props {
   status: DetectionStatus;
   error: string | null;
   onRetry: () => void;
+  speedProgress: SpeedProgress;
+  onCancel: () => void;
 }
 
-const STAGE_KEY: Record<StageId, "stage.ip" | "stage.dns" | "stage.webrtc" | "stage.ipv6" | "stage.blacklist" | "stage.proxy" | "stage.ai" | "stage.streaming"> = {
+const STAGE_KEY: Record<StageId, "stage.ip" | "stage.dns" | "stage.webrtc" | "stage.ipv6" | "stage.blacklist" | "stage.proxy" | "stage.ai" | "stage.streaming" | "stage.speed"> = {
   ip: "stage.ip",
   dns: "stage.dns",
   webrtc: "stage.webrtc",
@@ -19,29 +22,19 @@ const STAGE_KEY: Record<StageId, "stage.ip" | "stage.dns" | "stage.webrtc" | "st
   proxy: "stage.proxy",
   ai: "stage.ai",
   streaming: "stage.streaming",
+  speed: "stage.speed",
 };
 
 /** 检测进行中：逐项出现的进度列表。 */
-export function DetectingPage({ stages, stageOrder, status, error, onRetry }: Props) {
+export function DetectingPage({ stages, stageOrder, status, error, onRetry, speedProgress, onCancel }: Props) {
   const t = useT();
 
   return (
     <div className="detect-list">
-      <h2
-        style={{
-          fontSize: 20,
-          fontWeight: 600,
-          textAlign: "center",
-          letterSpacing: "-0.02em",
-          marginBottom: 4,
-        }}
-      >
+      <h2 style={{ fontSize: 20, fontWeight: 600, textAlign: "center", letterSpacing: "-0.02em", marginBottom: 4 }}>
         {t("detection.title")}
       </h2>
-      <p
-        className="text-secondary text-center"
-        style={{ fontSize: 14, marginBottom: "var(--space-6)" }}
-      >
+      <p className="text-secondary text-center" style={{ fontSize: 14, marginBottom: "var(--space-6)" }}>
         {status === "error" ? t("detection.failed") : t("detection.subtitle")}
       </p>
 
@@ -59,7 +52,7 @@ export function DetectingPage({ stages, stageOrder, status, error, onRetry }: Pr
         </p>
       )}
 
-      <div>
+      <div aria-live="polite">
         {stageOrder.map((id, i) => {
           const s = stages[id];
           return (
@@ -87,6 +80,20 @@ export function DetectingPage({ stages, stageOrder, status, error, onRetry }: Pr
           <button className="btn-primary" onClick={onRetry}>
             {t("common.retry")}
           </button>
+        </div>
+      )}
+
+      {stages.speed.status === "running" && (
+        <div className="speed-live" aria-live="polite">
+          <div className="speed-live-heading">
+            <span>{t(`speed.phase.${speedProgress.phase}` as "speed.phase.latency")}</span>
+            <span className="mono">{speedProgress.mbps ? `${speedProgress.mbps.toFixed(1)} Mbps` : "—"}</span>
+          </div>
+          <div className="speed-progress" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={speedProgress.progress}>
+            <span style={{ width: `${speedProgress.progress}%` }} />
+          </div>
+          <p className="muted">{t("speed.trafficNotice")}</p>
+          <button className="btn-ghost" type="button" onClick={onCancel}>{t("speed.cancel")}</button>
         </div>
       )}
     </div>
