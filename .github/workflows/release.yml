@@ -50,7 +50,7 @@ jobs:
         with: { targets: aarch64-linux-android,armv7-linux-androideabi,i686-linux-android,x86_64-linux-android }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 17 }
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
         with: { packages: ndk;27.2.12479018 platforms;android-35 build-tools;35.0.0 }
       - run: npm ci
       - run: npx tauri android init
